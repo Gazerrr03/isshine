@@ -10,7 +10,8 @@ The culmination: extract user direction from the conversation transcript, assemb
 ## Prerequisites
 
 - `feature/<slug>/.isshine.yaml` exists with phase = `issue`
-- All feature artifacts exist (proposal.md, design.md, tasks.md, technical-design.md, risks.md)
+- All full-workflow feature artifacts exist (proposal.md, harness.md, design.md, tasks.md, technical-design.md, risks.md)
+- Quick workflows may omit harness.md; use `proposal.md#Behavioral Boundaries` as the behavioral source
 - `gh` CLI authenticated
 
 ## Steps
@@ -36,30 +37,38 @@ If the check fails:
 - Per processing strategies: either **block publish** (fix before proceeding) or **publish with warnings** (document gaps)
 - Default behavior: block — present failures to user, fix before continuing
 
-### 2. Extract Human Direction from Transcript
+### 2. Extract Human Inputs from Checkpoint Window
 
-**This is the key innovation of isshine.** The conversation transcript contains user inputs that are more precise than any AI summary could be.
+**This is the key innovation of isshine.** The conversation transcript contains user inputs that are more precise than any AI summary could be. Use the feature's checkpoint window so the Issue preserves high-quality user direction from define/design/issue alignment without pulling unrelated session chatter.
 
 ```bash
+# Close the issue-context window immediately before assembling the Issue.
+START_REF=$(bash "$ISSHINE_STATE" get <slug> issue_context_start_ref)
+END_REF=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date +"%Y-%m-%dT%H:%M:%SZ")
+bash "$ISSHINE_STATE" set <slug> issue_context_end_ref "$END_REF"
+
 # Locate transcript
 TRANSCRIPT_PATH=$(bash "$ISSHINE_TRANSCRIPT" locate <session_ref>)
 
-# Extract user inputs
-bash "$ISSHINE_TRANSCRIPT" extract "$TRANSCRIPT_PATH" > /tmp/isshine-inputs-<slug>.md
+# Extract user inputs in the feature's requirement-convergence window.
+# If START_REF or END_REF is unavailable, this command falls back to full transcript extraction with a warning.
+bash "$ISSHINE_TRANSCRIPT" extract-window "$TRANSCRIPT_PATH" "$START_REF" "$END_REF" > /tmp/isshine-inputs-<slug>.md
 
 # Classify as directional vs general
-bash "$ISSHINE_TRANSCRIPT" classify "$TRANSCRIPT_PATH"
+bash "$ISSHINE_TRANSCRIPT" classify-window "$TRANSCRIPT_PATH" "$START_REF" "$END_REF"
 ```
 
-Review the classified inputs. For each input classified as "🎯 DIRECTIONAL":
+Review the classified inputs. For each input classified as "🎯 DIRECTIONAL" or genuinely high-value "🔍 POTENTIALLY_DIRECTIONAL":
 1. Read the original user words
-2. Assess: is this a direction-setting statement?
-3. If yes → include in the Issue's Human Consumption Layer **verbatim**
-4. Write a 1-2 sentence AI summary for context
+2. Assess: does this input constrain scope, reject an approach, set acceptance criteria, or express a product/priority/risk judgment?
+3. If yes → include it in `## Human Inputs` **verbatim**
+4. Write a one-sentence AI Summary that explains what this input constrains or decides for the Issue
 
 **Quality criteria for inclusion:**
 - The statement sets a boundary or direction
 - The statement expresses a decision or preference
+- The statement rejects a possible behavior or implementation direction
+- The statement specifies acceptance criteria or success conditions
 - The statement references principles or anti-goals
 - The statement would lose precision if paraphrased
 
@@ -67,6 +76,7 @@ Review the classified inputs. For each input classified as "🎯 DIRECTIONAL":
 - Clarification questions ("What does X do?")
 - Procedural chat ("Let me check that...")
 - Simple acknowledgments ("OK", "Sounds good")
+- Inputs already fully preserved in artifacts where the original wording adds no extra value
 
 ### 3. Assemble the Issue
 
@@ -76,31 +86,39 @@ Create `output/<slug>/issue.md` from template `assets/templates/output/issue.md`
 
 ```
 ## TL;DR
-[1-2 sentences from proposal.md Problem section]
+[1-2 sentences from proposal.md Problem section. Keep this short; do not compress high-quality user direction into TL;DR.]
 
 ## 📖 Direction Context
 > Related: [[spec/philosophy#xxx]], [[spec/anti-goals#yyy]]
+> Behavioral source: [[feature/<slug>/harness.md]] or [[feature/<slug>/proposal.md#Behavioral-Boundaries]]
 
-### 💬 Direction Input 1
-> **原文**: [User's exact words, verbatim — from transcript extraction]
->
-> *AI Summary*: [1-2 sentence summary of what this direction means]
+## Human Inputs
 
-### 💬 Direction Input 2
-> **原文**: [...]
->
-> *AI Summary*: [...]
+### Human Input 1
+> [User's exact words, verbatim — from checkpoint-window transcript extraction]
+
+AI Summary: [One sentence explaining what this input constrains or decides for the Issue]
+
+### Human Input 2
+> [...]
+
+AI Summary: [...]
 
 ## 🎯 Decision Points
 - [ ] [Decision that needs human judgment — from design.md alternatives]
 - [ ] [...]
+
+## 🧭 Behavioral Boundaries
+[Summarize the key In Scope, Behavioral Contract, and Done Means items from harness.md. For quick workflow, use proposal.md#Behavioral Boundaries.]
 ```
 
 **Rules for Human Consumption Layer:**
 - User original text = verbatim, no editing, no paraphrasing
-- AI summary = brief index for scanning
-- Multiple [原文 + AI summary] blocks allowed
+- AI Summary explains constraint/decision meaning; it must not merely restate the input
+- Multiple [Human Input + AI Summary] blocks allowed
+- If no high-quality inputs are found, omit `## Human Inputs` and note in the final review that no directional human input was included
 - Decision Points extracted from design.md alternatives and define-phase dialogue
+- Behavioral Boundaries extracted from harness.md in full workflow, or proposal.md#Behavioral Boundaries in quick workflow
 - If no clear decision points exist, omit the section (do not fabricate)
 
 #### Agent Consumption Layer
@@ -134,6 +152,7 @@ Create `output/<slug>/issue.md` from template `assets/templates/output/issue.md`
 
 ## 🔗 References
 - Proposal: [proposal.md]
+- Behavioral Source: [harness.md] or [proposal.md#Behavioral-Boundaries]
 - Design: [design.md]
 - Tasks: [tasks.md]
 - Technical Design: [technical-design.md]

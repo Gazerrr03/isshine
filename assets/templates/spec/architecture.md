@@ -1,5 +1,16 @@
 # Architecture Constraints
 
+## Document Contract
+
+| Field | Value |
+|-------|-------|
+| Scope | Global |
+| Primary Consumer | AI coding agent |
+| Secondary Consumer | Human reviewer |
+| Stability | Architecture-level; update when shared module or dependency rules change |
+| Owns | Module boundaries, data flow rules, and integration constraints |
+| Should Not Contain | One-off feature decisions or local task lists |
+
 > **Spec**: Optional template. If activated, must contain at least one architecture rule or boundary.
 
 ## Module Boundaries

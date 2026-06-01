@@ -124,7 +124,10 @@ cmd_init() {
 phase: init
 workflow: ${workflow}
 session_ref: null
+issue_context_start_ref: "${now}"
+issue_context_end_ref: null
 proposal: proposal.md
+harness: harness.md
 design: design.md
 tasks: tasks.md
 technical_design: technical-design.md
@@ -179,7 +182,7 @@ cmd_set() {
   fi
 
   # Field whitelist
-  local allowed_fields=("phase" "session_ref" "proposal" "design" "tasks" "technical_design" "risks" "issue_number" "issue_url")
+  local allowed_fields=("phase" "session_ref" "issue_context_start_ref" "issue_context_end_ref" "proposal" "harness" "design" "tasks" "technical_design" "risks" "issue_number" "issue_url")
   local found=false
   for allowed in "${allowed_fields[@]}"; do
     if [ "$field" = "$allowed" ]; then
@@ -312,8 +315,8 @@ cmd_check() {
 
   case "$phase" in
     design)
-      # Verify OpenSpec-like artifacts exist (proposal, design, tasks)
-      for artifact in "proposal.md" "design.md" "tasks.md"; do
+      # Verify definition artifacts exist before deep design.
+      for artifact in "proposal.md" "harness.md" "design.md" "tasks.md"; do
         if [ ! -f "${dir}/${artifact}" ] || [ ! -s "${dir}/${artifact}" ]; then
           red "CHECK FAILED: ${artifact} is missing or empty in ${dir}"
           exit 1
@@ -321,8 +324,18 @@ cmd_check() {
       done
       ;;
     issue)
-      # Verify all artifacts exist
-      for artifact in "proposal.md" "design.md" "tasks.md" "technical-design.md" "risks.md"; do
+      local workflow
+      workflow=$(yaml_field "workflow" "$state")
+
+      local artifacts
+      if [ "$workflow" = "quick" ]; then
+        artifacts="proposal.md design.md tasks.md"
+      else
+        artifacts="proposal.md harness.md design.md tasks.md technical-design.md risks.md"
+      fi
+
+      # Verify all workflow-required artifacts exist
+      for artifact in $artifacts; do
         if [ ! -f "${dir}/${artifact}" ] || [ ! -s "${dir}/${artifact}" ]; then
           red "CHECK FAILED: ${artifact} is missing or empty in ${dir}"
           exit 1

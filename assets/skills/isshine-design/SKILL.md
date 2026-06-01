@@ -5,12 +5,12 @@ description: "isshine Phase 2: Design. Invoke with /isshine-design. Technical de
 
 # isshine Phase 2: Deep Design
 
-Technical deep design: take the high-level approach from proposal.md + design.md and produce detailed technical specification, edge case analysis, and risk identification.
+Technical deep design: take the high-level approach from proposal.md + harness.md + design.md and produce detailed technical specification, edge case analysis, and risk identification.
 
 ## Prerequisites
 
 - `feature/<slug>/.isshine.yaml` exists with phase = `design`
-- proposal.md, design.md, tasks.md exist and are non-empty
+- proposal.md, harness.md, design.md, tasks.md exist and are non-empty
 
 ## Steps
 
@@ -30,6 +30,7 @@ Proceed only after verification passes.
 Read all existing artifacts:
 - `spec/` — global constraints and philosophy
 - `feature/<slug>/proposal.md` — problem, goals, scope
+- `feature/<slug>/harness.md` — behavioral constraints
 - `feature/<slug>/design.md` — high-level approach
 - `feature/<slug>/tasks.md` — implementation plan
 - `spec/.processing-strategies.md` — phase conventions
@@ -41,9 +42,13 @@ Read all existing artifacts:
 - Edge cases and failure modes
 - Risk surfaces and mitigation strategies
 
+If the user provides a high-quality technical constraint during this phase, preserve it as a candidate Human Input for the final Issue. Good candidates reject a technical direction, constrain dependencies, set non-negotiable behavior, or clarify risk tolerance.
+
 ### 3. Generate Technical Design
 
 Create `feature/<slug>/technical-design.md` from template `assets/templates/feature/technical-design.md`.
+
+Treat `harness.md` as a hard behavioral constraint. If a technical choice conflicts with the harness, flag the conflict and do not silently proceed.
 
 Key sections:
 
@@ -102,6 +107,8 @@ For each risk:
 
 Verify alignment between artifacts:
 - Does technical-design.md implement the approach in design.md? If diverging, note why.
+- Does technical-design.md preserve the behavior promised in harness.md?
+- Does technical-design.md avoid behavior explicitly ruled out by harness.md?
 - Do risks.md entries cover the edge cases in technical-design.md?
 - Are any tasks in tasks.md missing based on the technical design?
 

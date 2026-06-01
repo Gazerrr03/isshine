@@ -1,5 +1,16 @@
 # Product Philosophy
 
+## Document Contract
+
+| Field | Value |
+|-------|-------|
+| Scope | Global |
+| Primary Consumer | Human decision-maker |
+| Secondary Consumer | AI coding agent |
+| Stability | Milestone-level; update only when product judgment changes |
+| Owns | Product principles, world model, and decision standards |
+| Should Not Contain | Feature-specific scope, tasks, or implementation details |
+
 > **Spec**: Must contain at least one core principle. Each principle must have a name and a 1-2 sentence description. Replace or remove the examples below.
 
 ## Core Principles

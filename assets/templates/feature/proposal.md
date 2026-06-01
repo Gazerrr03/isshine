@@ -1,5 +1,16 @@
 # Proposal: [Feature Name]
 
+## Document Contract
+
+| Field | Value |
+|-------|-------|
+| Scope | Feature |
+| Primary Consumer | Human decision-maker |
+| Secondary Consumer | AI coding agent |
+| Stability | Requirement iteration-level; update when the problem, goals, or explicit scope changes |
+| Owns | Problem, goals, and explicit scope |
+| Should Not Contain | Detailed implementation, technical contracts, risks, or task breakdowns |
+
 > **Spec**:
 > - `## Problem` — must be non-empty, 2-5 sentences
 > - `## Goals` — must list at least 1 goal, each a single sentence

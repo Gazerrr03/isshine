@@ -1,11 +1,11 @@
 ---
 name: isshine-define
-description: "isshine Phase 1: Define. Invoke with /isshine-define. Requirement definition — read spec, explore code, enter Plan Mode dialogue, generate proposal/design/tasks."
+description: "isshine Phase 1: Define. Invoke with /isshine-define. Requirement definition — read spec, explore code, enter Plan Mode dialogue, generate proposal/harness/design/tasks."
 ---
 
 # isshine Phase 1: Define
 
-Define the requirement: read global context, explore relevant code, enter Plan Mode for human-AI alignment, and generate the three foundation artifacts.
+Define the requirement: read global context, explore relevant code, enter Plan Mode for human-AI alignment, and generate the four foundation artifacts, including the behavioral harness.
 
 ## Prerequisites
 
@@ -73,6 +73,8 @@ bash "$ISSHINE_STATE" init <slug> full
 bash "$ISSHINE_STATE" set <slug> session_ref "<current-session-id>"
 ```
 
+`init` automatically records `issue_context_start_ref` in `.isshine.yaml`. This checkpoint marks the beginning of the feature's requirement-convergence window for later Human Inputs extraction.
+
 Directory created:
 ```
 feature/<slug>/
@@ -97,13 +99,13 @@ bash "$ISSHINE_STATE" transition <slug> init-complete
 
 Throughout this dialogue:
 - Reference `spec/` principles whenever they apply
-- When the user makes a high-quality, direction-setting statement, **note it mentally** for later transcript extraction
+- When the user makes a high-quality, direction-setting statement, preserve it as a candidate Human Input for the final Issue. Good candidates define scope, reject approaches, set acceptance criteria, or express product/priority/risk judgment.
 - Ask clarifying questions when scope is ambiguous
 - Do NOT jump to implementation details — that's for Phase 2 (design)
 
 ### 6. Generate Artifacts
 
-Based on the dialogue, generate three files in `feature/<slug>/`:
+Based on the dialogue, generate four files in `feature/<slug>/`:
 
 #### proposal.md
 Use template: `assets/templates/feature/proposal.md`
@@ -114,11 +116,21 @@ Key sections to fill:
 - **Scope**: In scope + Out of scope
 - **Related**: Link to existing issues/PRs
 
+#### harness.md
+Use template: `assets/templates/feature/harness.md`
+
+Key sections to fill:
+- **What It Is**: Behavioral definition of the feature, not an implementation plan
+- **In Scope / Out of Scope**: What the feature must support and must not take on
+- **Behavioral Contract**: Concrete rules later phases must preserve
+- **Done Means**: Checkable feature-level success conditions
+
 #### design.md
 Use template: `assets/templates/feature/design.md`
 
 Key sections to fill:
 - **Approach**: The chosen high-level direction (NOT detailed implementation)
+- **Harness Alignment**: The approach must preserve `harness.md`
 - **Alternatives Considered**: What else was discussed and why rejected
 - **Architecture Impact**: What modules/files will be affected
 - **Dependencies**: New libraries, services, or upstream changes needed
@@ -152,6 +164,7 @@ features:
 
 **Summary content:**
 - **proposal.md**: Problem, goals, scope summary (2-3 sentences each)
+- **harness.md**: Behavioral boundaries, feature rules, and done signals
 - **design.md**: Approach summary, key architectural decisions
 - **tasks.md**: Task count, phase breakdown
 
@@ -163,7 +176,7 @@ After user confirms, proceed to exit conditions.
 
 ## Exit Conditions
 
-- proposal.md, design.md, tasks.md all created with non-empty content
+- proposal.md, harness.md, design.md, tasks.md all created with non-empty content
 - `src/index.yaml` updated with feature route
 - User has confirmed artifacts
 - **Phase guard**: Run `bash "$ISSHINE_STATE" check <slug> define` — validates phase is `define`
@@ -175,6 +188,7 @@ After user confirms, proceed to exit conditions.
 ✅ Phase: define → design
 📁 feature/<slug>/
    ├── proposal.md    — Why + What
+   ├── harness.md     — Behavioral boundaries
    ├── design.md      — How (high-level)
    └── tasks.md       — Implementation checklist
 
