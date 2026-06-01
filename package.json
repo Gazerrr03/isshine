@@ -1,0 +1,32 @@
+{
+  "name": "@rpamis/isshine",
+  "version": "0.1.0",
+  "description": "Flash of requirement — generate AI-friendly, human-readable GitHub Issues from conversations",
+  "keywords": [
+    "isshine",
+    "issue",
+    "requirements",
+    "skills",
+    "spec-driven",
+    "ai-friendly"
+  ],
+  "license": "MIT",
+  "author": "benym",
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "assets",
+    "scripts/postinstall.js"
+  ],
+  "scripts": {
+    "test:shell": "node scripts/run-bats.js test/shell/*.bats",
+    "prepublishOnly": "node scripts/prepublish-check.js",
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "packageManager": "pnpm@10.18.3",
+  "engines": {
+    "node": ">=20"
+  }
+}

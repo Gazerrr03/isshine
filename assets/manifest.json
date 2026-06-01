@@ -1,0 +1,66 @@
+{
+  "name": "isshine",
+  "version": "0.1.0",
+  "description": "Flash of requirement — generate AI-friendly, human-readable GitHub Issues from conversations",
+  "skills": [
+    {
+      "name": "isshine",
+      "path": "skills/isshine/SKILL.md",
+      "zhPath": "skills-zh/isshine/SKILL.md",
+      "description": "Main entry point — detect phase and dispatch to sub-skills"
+    },
+    {
+      "name": "isshine-init",
+      "path": "skills/isshine-init/SKILL.md",
+      "zhPath": "skills-zh/isshine-init/SKILL.md",
+      "description": "Project initialization — select templates, define processing strategies, establish checkpoint"
+    },
+    {
+      "name": "isshine-define",
+      "path": "skills/isshine-define/SKILL.md",
+      "zhPath": "skills-zh/isshine-define/SKILL.md",
+      "description": "Requirement definition — read spec, explore code, generate proposal/design/tasks"
+    },
+    {
+      "name": "isshine-design",
+      "path": "skills/isshine-design/SKILL.md",
+      "zhPath": "skills-zh/isshine-design/SKILL.md",
+      "description": "Technical deep design — generate technical-design doc, identify risks"
+    },
+    {
+      "name": "isshine-issue",
+      "path": "skills/isshine-issue/SKILL.md",
+      "zhPath": "skills-zh/isshine-issue/SKILL.md",
+      "description": "Synthesize and publish — extract transcript, assemble dual-layer Issue, publish to GitHub"
+    },
+    {
+      "name": "isshine-pr",
+      "path": "skills/isshine-pr/SKILL.md",
+      "zhPath": "skills-zh/isshine-pr/SKILL.md",
+      "description": "PR Comment generator — read artifacts, generate reviewer-friendly PR description"
+    },
+    {
+      "name": "isshine-quick",
+      "path": "skills/isshine-quick/SKILL.md",
+      "zhPath": "skills-zh/isshine-quick/SKILL.md",
+      "description": "Quick mode — define → issue, skip design phase for small changes"
+    }
+  ],
+  "scripts": [
+    {
+      "name": "isshine-state",
+      "path": "skills/isshine/scripts/isshine-state.sh",
+      "description": "State machine — read/write .isshine.yaml, phase transitions"
+    },
+    {
+      "name": "isshine-check",
+      "path": "skills/isshine/scripts/isshine-check.sh",
+      "description": "Completeness validator — check spec-defined sections are non-empty"
+    },
+    {
+      "name": "isshine-transcript",
+      "path": "skills/isshine/scripts/isshine-transcript.sh",
+      "description": "Transcript helper — locate and extract user inputs from conversation"
+    }
+  ]
+}
