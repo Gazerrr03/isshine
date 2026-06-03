@@ -33,12 +33,21 @@ green() { echo -e "\033[32m$1\033[0m" >&2; }
 json_field() {
   local line="$1"
   local field="$2"
-  echo "$line" | grep -o "\"${field}\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || true
+  node -e '
+    const [line, field] = process.argv.slice(1);
+    try {
+      const value = JSON.parse(line)[field];
+      if (value === undefined || value === null) process.exit(0);
+      process.stdout.write(typeof value === "string" ? value : JSON.stringify(value));
+    } catch {
+      process.exit(0);
+    }
+  ' "$line" "$field" || true
 }
 
 json_content() {
   local line="$1"
-  echo "$line" | sed 's/.*"content"[[:space:]]*:[[:space:]]*"//' | sed 's/"[[:space:]]*}$//' || echo "$line"
+  json_field "$line" "content"
 }
 
 ref_kind() {
@@ -377,6 +386,7 @@ cmd_classify_window() {
 
   local tmp
   tmp=$(mktemp 2>/dev/null || mktemp -t isshine-transcript)
+  trap 'rm -f "$tmp"' EXIT
   local line_index=0
   while IFS= read -r line; do
     [ -z "$line" ] && continue
@@ -388,6 +398,7 @@ cmd_classify_window() {
 
   cmd_classify "$tmp"
   rm -f "$tmp"
+  trap - EXIT
 }
 
 # --- Main dispatch ---
