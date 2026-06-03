@@ -1,5 +1,16 @@
 # Technical Design: [Feature Name]
 
+## Document Contract
+
+| Field | Value |
+|-------|-------|
+| Scope | Feature |
+| Primary Consumer | AI coding agent |
+| Secondary Consumer | Human reviewer |
+| Stability | Technical design-level; update when interfaces, data flow, or edge cases change |
+| Owns | Data flow, interfaces, state changes, edge cases, and technical implications |
+| Should Not Contain | Product philosophy, high-level persuasion, or implementation task sequencing |
+
 > **Spec**:
 > - `## Data Flow` — must describe how data moves through the system
 > - `## Interfaces` — must list at least 1 interface/API contract

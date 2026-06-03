@@ -27,6 +27,7 @@ define → issue → done
 Same as `/isshine-define` but with reduced ceremony:
 
 - **Shorter exploration**: Read only the directly affected files
+- **Behavioral Boundaries in proposal.md**: Do not create standalone `harness.md`; add a concise `## Behavioral Boundaries` section to `proposal.md`
 - **Simpler design.md**: Just the approach paragraph, no full alternatives analysis
 - **Simpler tasks.md**: Flat list, no phase grouping needed
 
@@ -45,6 +46,7 @@ Only the essentials:
 - `tasks.md` — Checklist (flat, no phases)
 
 Skip:
+- `harness.md` (quick mode uses `proposal.md#Behavioral Boundaries`)
 - `technical-design.md`
 - `risks.md`
 
@@ -62,6 +64,7 @@ bash "$ISSHINE_STATE" transition <slug> define-complete
 ### 5. Synthesize and Publish
 
 Same as `/isshine-issue`, but:
+- Use `proposal.md#Behavioral Boundaries` as the behavioral source
 - Skip risk extraction (no risks.md)
 - Skip technical design references
 - Human Consumption Layer and Agent Consumption Layer still required

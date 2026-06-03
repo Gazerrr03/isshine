@@ -1,5 +1,16 @@
 # Anti-Goals
 
+## Document Contract
+
+| Field | Value |
+|-------|-------|
+| Scope | Global |
+| Primary Consumer | Human decision-maker |
+| Secondary Consumer | AI coding agent |
+| Stability | Milestone-level; update only when forbidden product behavior changes |
+| Owns | Product-level anti-goals and forbidden operating modes |
+| Should Not Contain | Feature-local exclusions or implementation details |
+
 > **Spec**: Must list at least one anti-goal. Each anti-goal must describe what we must NEVER become or do, and why.
 
 ## What This Product Must NEVER Become

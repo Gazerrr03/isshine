@@ -1,5 +1,16 @@
 # Risks: [Feature Name]
 
+## Document Contract
+
+| Field | Value |
+|-------|-------|
+| Scope | Feature |
+| Primary Consumer | Human reviewer |
+| Secondary Consumer | AI coding agent |
+| Stability | Review-level; update when risks or mitigations change |
+| Owns | Concrete failure modes, mitigations, triggers, and fallback paths |
+| Should Not Contain | Generic concerns, implementation tasks, or unrelated product rationale |
+
 > **Spec**:
 > - Must list at least 2 risks
 > - Each risk must have: description, severity, likelihood, mitigation, trigger

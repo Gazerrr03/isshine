@@ -1,5 +1,16 @@
 # PR Comment: [Feature Name]
 
+## Document Contract
+
+| Field | Value |
+|-------|-------|
+| Scope | Output |
+| Primary Consumer | Pull request reviewer |
+| Secondary Consumer | AI coding agent |
+| Stability | PR-level; update when implementation or verification changes |
+| Owns | Reviewer-facing implementation summary, design alignment, risks, and verification checklist |
+| Should Not Contain | Full source docs, unrelated work, or unverified claims |
+
 > **Spec**:
 > - `## What This PR Does` — must be non-empty
 > - `## Design Decisions` — must reference design.md
@@ -24,6 +35,7 @@
 
 ## Related
 - Issue: #[...]
+- Harness: [harness.md]
 - Design: [design.md]
 - Tasks: [tasks.md]
 

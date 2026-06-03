@@ -82,14 +82,14 @@ Produces a reviewer-friendly PR description: what changed, design decisions appl
 | Layer | Location | Content | Stability |
 |-------|----------|---------|-----------|
 | **Spec** (Global) | `spec/` | Philosophy, constraints, anti-goals | Fixed (milestone-level changes) |
-| **Feature** (Local) | `feature/<slug>/` | Proposal, design, tasks, risks | Semi-fixed (requirement iteration) |
+| **Feature** (Local) | `feature/<slug>/` | Proposal, harness, design, tasks, risks | Semi-fixed (requirement iteration) |
 | **Surface** (Output) | `output/<slug>/` | Issue, PR comment | Variable (evolves with development) |
 
 ### Dual-Layer Issue
 
 #### Human Consumption Layer
 - **TL;DR** — 1-2 sentence summary
-- **Direction Inputs** — your exact words from the conversation + AI summary for scanning
+- **Human Inputs** — high-quality user instructions preserved verbatim from the feature checkpoint window, with short AI summaries
 - **Decision Points** — choices needing human judgment
 
 #### Agent Consumption Layer
@@ -114,6 +114,7 @@ your-project/
 ├── feature/<slug>/             # Per-issue artifacts
 │   ├── .isshine.yaml           # State machine
 │   ├── proposal.md             # Why + What
+│   ├── harness.md              # Behavioral boundaries
 │   ├── design.md               # How (high-level)
 │   ├── tasks.md                # Implementation checklist
 │   ├── technical-design.md     # Deep technical design
@@ -137,7 +138,7 @@ Completeness is checked against the **Spec** defined in each template — every 
 |---------|-------------|
 | `/isshine` | Main entry — detect phase, dispatch to sub-skill |
 | `/isshine-init` | Project setup — templates, strategies, checkpoint |
-| `/isshine-define` | Requirement definition — Plan Mode → proposal/design/tasks |
+| `/isshine-define` | Requirement definition — Plan Mode → proposal/harness/design/tasks |
 | `/isshine-design` | Technical deep design — risks, edge cases, interfaces |
 | `/isshine-issue` | Synthesize + publish dual-layer Issue |
 | `/isshine-pr` | Generate PR comment from design artifacts |

@@ -111,6 +111,7 @@ cmd_check() {
   # Map of feature artifact → template file
   local artifacts=(
     "proposal.md:${templates_dir}/feature/proposal.md"
+    "harness.md:${templates_dir}/feature/harness.md"
     "design.md:${templates_dir}/feature/design.md"
     "tasks.md:${templates_dir}/feature/tasks.md"
     "technical-design.md:${templates_dir}/feature/technical-design.md"

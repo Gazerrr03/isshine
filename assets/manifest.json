@@ -19,7 +19,7 @@
       "name": "isshine-define",
       "path": "skills/isshine-define/SKILL.md",
       "zhPath": "skills-zh/isshine-define/SKILL.md",
-      "description": "Requirement definition — read spec, explore code, generate proposal/design/tasks"
+      "description": "Requirement definition — read spec, explore code, generate proposal/harness/design/tasks"
     },
     {
       "name": "isshine-design",

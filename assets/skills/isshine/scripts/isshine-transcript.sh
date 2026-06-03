@@ -5,13 +5,21 @@
 # Subcommands:
 #   locate <session_ref>              — Find the transcript file for a session
 #   extract <transcript_path>         — Extract user inputs from transcript
+#   extract-window <path> <start> <end> [format]
+#                                      — Extract user inputs between checkpoint refs
 #   classify <transcript_path>        — Classify inputs as "directional" vs "general"
+#   classify-window <path> <start> <end>
+#                                      — Classify user inputs between checkpoint refs
 #
 # The transcript is Claude Code's conversation history.
 # session_ref from .isshine.yaml can be:
 #   - A session ID: "session_abc123"
 #   - A timestamp range: "2026-06-01T10:00:00Z..2026-06-01T11:00:00Z"
 #   - A message index range: "msg:5..msg:12"
+#
+# Checkpoint refs accepted by extract-window/classify-window:
+#   - ISO timestamp: "2026-06-01T10:00:00Z"
+#   - Message index: "msg:5" (1-based index of non-empty transcript lines)
 
 set -euo pipefail
 
@@ -19,6 +27,86 @@ set -euo pipefail
 red() { echo -e "\033[31m$1\033[0m" >&2; }
 yellow() { echo -e "\033[33m$1\033[0m" >&2; }
 green() { echo -e "\033[32m$1\033[0m" >&2; }
+
+# --- JSONL helpers ---
+
+json_field() {
+  local line="$1"
+  local field="$2"
+  node -e '
+    const [line, field] = process.argv.slice(1);
+    try {
+      const value = JSON.parse(line)[field];
+      if (value === undefined || value === null) process.exit(0);
+      process.stdout.write(typeof value === "string" ? value : JSON.stringify(value));
+    } catch {
+      process.exit(0);
+    }
+  ' "$line" "$field" || true
+}
+
+json_content() {
+  local line="$1"
+  json_field "$line" "content"
+}
+
+ref_kind() {
+  local ref="$1"
+  if [[ "$ref" =~ ^msg:[0-9]+$ ]]; then
+    echo "msg"
+  elif [ -n "$ref" ] && [ "$ref" != "null" ]; then
+    echo "time"
+  else
+    echo "empty"
+  fi
+}
+
+ref_msg_index() {
+  local ref="$1"
+  echo "${ref#msg:}"
+}
+
+line_in_window() {
+  local line="$1"
+  local line_index="$2"
+  local start_ref="$3"
+  local end_ref="$4"
+
+  local start_kind
+  local end_kind
+  start_kind=$(ref_kind "$start_ref")
+  end_kind=$(ref_kind "$end_ref")
+
+  if [ "$start_kind" = "msg" ]; then
+    local start_index
+    start_index=$(ref_msg_index "$start_ref")
+    if [ "$line_index" -lt "$start_index" ]; then
+      return 1
+    fi
+  elif [ "$start_kind" = "time" ]; then
+    local timestamp
+    timestamp=$(json_field "$line" "timestamp")
+    if [ -z "$timestamp" ] || [[ "$timestamp" < "$start_ref" ]]; then
+      return 1
+    fi
+  fi
+
+  if [ "$end_kind" = "msg" ]; then
+    local end_index
+    end_index=$(ref_msg_index "$end_ref")
+    if [ "$line_index" -gt "$end_index" ]; then
+      return 1
+    fi
+  elif [ "$end_kind" = "time" ]; then
+    local timestamp
+    timestamp=$(json_field "$line" "timestamp")
+    if [ -z "$timestamp" ] || [[ "$timestamp" > "$end_ref" ]]; then
+      return 1
+    fi
+  fi
+
+  return 0
+}
 
 # --- Locate transcript ---
 
@@ -72,7 +160,7 @@ cmd_extract() {
     while IFS= read -r line; do
       [ -z "$line" ] && continue
       local role
-      role=$(echo "$line" | grep -o '"role"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || true)
+      role=$(json_field "$line" "role")
       if [ "$role" = "user" ]; then
         if [ "$first" != "true" ]; then
           echo ","
@@ -88,15 +176,92 @@ cmd_extract() {
     while IFS= read -r line; do
       [ -z "$line" ] && continue
       local role
-      role=$(echo "$line" | grep -o '"role"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || true)
+      role=$(json_field "$line" "role")
       if [ "$role" = "user" ]; then
         index=$((index + 1))
         local timestamp
-        timestamp=$(echo "$line" | grep -o '"timestamp"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || echo "unknown")
+        timestamp=$(json_field "$line" "timestamp")
+        timestamp="${timestamp:-unknown}"
         local content
-        content=$(echo "$line" | sed 's/.*"content"[[:space:]]*:[[:space:]]*"//' | sed 's/"[[:space:]]*}$//' || echo "$line")
+        content=$(json_content "$line")
 
         echo "### User Input #${index}"
+        echo ""
+        echo "> **Time**: ${timestamp}"
+        echo ""
+        echo "\`\`\`"
+        echo "$content"
+        echo "\`\`\`"
+        echo ""
+        echo "---"
+        echo ""
+      fi
+    done < "$transcript_path"
+  fi
+}
+
+# --- Extract user inputs within a checkpoint window ---
+
+cmd_extract_window() {
+  local transcript_path="$1"
+  local start_ref="${2:-null}"
+  local end_ref="${3:-null}"
+  local output_format="${4:-markdown}"  # markdown | json
+
+  if [ ! -f "$transcript_path" ]; then
+    red "ERROR: Transcript file not found: ${transcript_path}"
+    exit 1
+  fi
+
+  if [ -z "$start_ref" ] || [ "$start_ref" = "null" ] || [ -z "$end_ref" ] || [ "$end_ref" = "null" ]; then
+    yellow "WARNING: checkpoint window incomplete; falling back to full transcript extraction"
+    cmd_extract "$transcript_path" "$output_format"
+    return
+  fi
+
+  if [ "$output_format" = "json" ]; then
+    echo "["
+    local first=true
+    local line_index=0
+    while IFS= read -r line; do
+      [ -z "$line" ] && continue
+      line_index=$((line_index + 1))
+      if ! line_in_window "$line" "$line_index" "$start_ref" "$end_ref"; then
+        continue
+      fi
+
+      local role
+      role=$(json_field "$line" "role")
+      if [ "$role" = "user" ]; then
+        if [ "$first" != "true" ]; then
+          echo ","
+        fi
+        first=false
+        echo "$line"
+      fi
+    done < "$transcript_path"
+    echo "]"
+  else
+    local index=0
+    local line_index=0
+    while IFS= read -r line; do
+      [ -z "$line" ] && continue
+      line_index=$((line_index + 1))
+      if ! line_in_window "$line" "$line_index" "$start_ref" "$end_ref"; then
+        continue
+      fi
+
+      local role
+      role=$(json_field "$line" "role")
+      if [ "$role" = "user" ]; then
+        index=$((index + 1))
+        local timestamp
+        timestamp=$(json_field "$line" "timestamp")
+        timestamp="${timestamp:-unknown}"
+        local content
+        content=$(json_content "$line")
+
+        echo "### Human Input Candidate #${index}"
         echo ""
         echo "> **Time**: ${timestamp}"
         echo ""
@@ -135,14 +300,14 @@ cmd_classify() {
   while IFS= read -r line; do
     [ -z "$line" ] && continue
     local role
-    role=$(echo "$line" | grep -o '"role"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || true)
+    role=$(json_field "$line" "role")
     if [ "$role" != "user" ]; then
       continue
     fi
 
     index=$((index + 1))
     local content
-    content=$(echo "$line" | sed 's/.*"content"[[:space:]]*:[[:space:]]*"//' | sed 's/"[[:space:]]*}$//' || echo "$line")
+    content=$(json_content "$line")
 
     # Heuristic scoring for "directional" quality
     local score=0
@@ -197,6 +362,45 @@ cmd_classify() {
   done < "$transcript_path"
 }
 
+# --- Classify inputs within a checkpoint window ---
+
+cmd_classify_window() {
+  local transcript_path="$1"
+  local start_ref="${2:-null}"
+  local end_ref="${3:-null}"
+
+  if [ ! -f "$transcript_path" ]; then
+    red "ERROR: Transcript file not found: ${transcript_path}"
+    exit 1
+  fi
+
+  if [ -z "$start_ref" ] || [ "$start_ref" = "null" ] || [ -z "$end_ref" ] || [ "$end_ref" = "null" ]; then
+    yellow "WARNING: checkpoint window incomplete; falling back to full transcript classification"
+    cmd_classify "$transcript_path"
+    return
+  fi
+
+  echo "=== Directional Input Classification (checkpoint window) ==="
+  echo "Window: ${start_ref} .. ${end_ref}"
+  echo ""
+
+  local tmp
+  tmp=$(mktemp 2>/dev/null || mktemp -t isshine-transcript)
+  trap 'rm -f "$tmp"' EXIT
+  local line_index=0
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    line_index=$((line_index + 1))
+    if line_in_window "$line" "$line_index" "$start_ref" "$end_ref"; then
+      echo "$line" >> "$tmp"
+    fi
+  done < "$transcript_path"
+
+  cmd_classify "$tmp"
+  rm -f "$tmp"
+  trap - EXIT
+}
+
 # --- Main dispatch ---
 
 main() {
@@ -206,7 +410,11 @@ main() {
     echo "Subcommands:"
     echo "  locate <session_ref>           Find transcript file for a session"
     echo "  extract <path> [markdown|json]  Extract user inputs"
+    echo "  extract-window <path> <start> <end> [markdown|json]"
+    echo "                                  Extract user inputs within checkpoint refs"
     echo "  classify <path>                 Classify inputs as directional vs general"
+    echo "  classify-window <path> <start> <end>"
+    echo "                                  Classify inputs within checkpoint refs"
     echo ""
     echo "The session_ref from .isshine.yaml points to the conversation window."
     echo "This script locates the transcript and extracts user inputs from it."
@@ -219,7 +427,9 @@ main() {
   case "$subcommand" in
     locate)    cmd_locate "$@" ;;
     extract)   cmd_extract "$@" ;;
+    extract-window) cmd_extract_window "$@" ;;
     classify)  cmd_classify "$@" ;;
+    classify-window) cmd_classify_window "$@" ;;
     *)
       red "ERROR: Unknown subcommand: '$subcommand'"
       exit 1
