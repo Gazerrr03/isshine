@@ -3,7 +3,7 @@
  * isshine prepublish check — validate package before publishing
  *
  * Checks:
- * 1. All skill files referenced in manifest exist
+ * 1. All skill files referenced in manifest exist, including zhPath when present
  * 2. All template files have Spec blocks
  * 3. All bash scripts are executable (on non-Windows)
  * 4. package.json version matches manifest version
@@ -53,6 +53,15 @@ for (const skill of manifest.skills) {
   } else {
     ok(`Skill: ${skill.name}`);
   }
+
+  if (skill.zhPath) {
+    const zhSkillPath = join(ASSETS, skill.zhPath);
+    if (!existsSync(zhSkillPath)) {
+      fail(`Chinese skill missing: ${skill.zhPath}`);
+    } else {
+      ok(`Chinese skill: ${skill.name}`);
+    }
+  }
 }
 
 for (const script of (manifest.scripts || [])) {
@@ -98,6 +107,12 @@ const skillsDir = join(ASSETS, 'skills');
 const skillDirs = readdirSync(skillsDir, { withFileTypes: true })
   .filter(d => d.isDirectory())
   .map(d => d.name);
+const zhSkillsDir = join(ASSETS, 'skills-zh');
+const zhSkillDirs = existsSync(zhSkillsDir)
+  ? readdirSync(zhSkillsDir, { withFileTypes: true })
+    .filter(d => d.isDirectory())
+    .map(d => d.name)
+  : [];
 
 const expectedSkills = ['isshine', 'isshine-init', 'isshine-define', 'isshine-design', 'isshine-issue', 'isshine-pr', 'isshine-quick'];
 
@@ -105,8 +120,12 @@ for (const name of expectedSkills) {
   if (!skillDirs.includes(name)) {
     fail(`Missing skill directory: ${name}`);
   }
+  if (!zhSkillDirs.includes(name)) {
+    fail(`Missing Chinese skill directory: ${name}`);
+  }
 }
 ok(`Found ${skillDirs.length} skill directories`);
+ok(`Found ${zhSkillDirs.length} Chinese skill directories`);
 
 // Summary
 console.log('\n--- Summary ---');

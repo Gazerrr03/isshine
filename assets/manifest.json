@@ -2,6 +2,7 @@
   "name": "isshine",
   "version": "0.1.0",
   "description": "Flash of requirement — generate AI-friendly, human-readable GitHub Issues from conversations",
+  "defaultLocale": "zh",
   "skills": [
     {
       "name": "isshine",
