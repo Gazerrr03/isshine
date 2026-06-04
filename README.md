@@ -4,6 +4,8 @@
 
 **isshine** transforms the conversation between you and your AI coding assistant into a structured, dual-layer GitHub Issue. It preserves your exact words (not AI-paraphrased summaries), references your project's philosophy and constraints, and ensures information completeness before publishing.
 
+Default language: Chinese. The package installs the Chinese skill set by default, while preserving the English skill sources under `assets/skills`.
+
 ## Why isshine?
 
 ### The Problem
@@ -36,6 +38,8 @@ Conversation → isshine → Dual-Layer Issue
 ```bash
 npx skills add rpamis/isshine
 ```
+
+This installs the Chinese skills by default. Commands, file names, state fields, and GitHub labels remain unchanged.
 
 ### First Use
 

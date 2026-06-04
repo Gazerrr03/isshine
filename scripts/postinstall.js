@@ -3,7 +3,7 @@
  * isshine postinstall — deploy skills to Claude Code skills directory
  *
  * This runs automatically after `npm install` or `npx skills add`.
- * It copies SKILL.md files from assets/skills/ to ~/.claude/skills/isshine*/
+ * It copies SKILL.md files from assets/skills-zh/ to ~/.claude/skills/isshine*.
  */
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, copyFileSync, statSync, writeFileSync } from 'node:fs';
@@ -14,7 +14,10 @@ import { platform, homedir } from 'node:os';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 const ASSETS = join(ROOT, 'assets');
-const SKILLS_SRC = join(ASSETS, 'skills');
+const manifest = JSON.parse(readFileSync(join(ASSETS, 'manifest.json'), 'utf-8'));
+const DEFAULT_LOCALE = manifest.defaultLocale || 'en';
+const SKILLS_SRC = join(ASSETS, DEFAULT_LOCALE === 'en' ? 'skills' : `skills-${DEFAULT_LOCALE}`);
+const FALLBACK_SKILLS_SRC = join(ASSETS, 'skills');
 
 // Determine Claude Code skills directory
 const CLAUDE_SKILLS = join(homedir(), '.claude', 'skills');
@@ -32,9 +35,14 @@ function error(msg) {
 }
 
 function deploySkills() {
-  if (!existsSync(SKILLS_SRC)) {
-    error(`Skills source not found: ${SKILLS_SRC}`);
+  const skillsSource = existsSync(SKILLS_SRC) ? SKILLS_SRC : FALLBACK_SKILLS_SRC;
+  if (!existsSync(skillsSource)) {
+    error(`Skills source not found: ${skillsSource}`);
     return false;
+  }
+
+  if (skillsSource !== SKILLS_SRC) {
+    warn(`Default ${DEFAULT_LOCALE} skills not found; falling back to ${relative(ROOT, skillsSource)}`);
   }
 
   if (!existsSync(CLAUDE_SKILLS)) {
@@ -42,14 +50,14 @@ function deploySkills() {
     log(`Created ${CLAUDE_SKILLS}`);
   }
 
-  const skillDirs = readdirSync(SKILLS_SRC, { withFileTypes: true })
+  const skillDirs = readdirSync(skillsSource, { withFileTypes: true })
     .filter(d => d.isDirectory())
     .map(d => d.name);
 
   let deployed = 0;
 
   for (const dir of skillDirs) {
-    const srcDir = join(SKILLS_SRC, dir);
+    const srcDir = join(skillsSource, dir);
     const destDir = join(CLAUDE_SKILLS, dir);
 
     // Create destination directory
@@ -59,11 +67,25 @@ function deploySkills() {
 
     // Copy all files recursively
     copyRecursive(srcDir, destDir);
+
+    if (dir === 'isshine') {
+      const preferredScriptsSrc = join(skillsSource, 'isshine', 'scripts');
+      const fallbackScriptsSrc = join(FALLBACK_SKILLS_SRC, 'isshine', 'scripts');
+      const scriptsSrc = existsSync(preferredScriptsSrc) ? preferredScriptsSrc : fallbackScriptsSrc;
+      const scriptsDest = join(destDir, 'scripts');
+      if (scriptsSrc !== join(srcDir, 'scripts') && existsSync(scriptsSrc)) {
+        if (!existsSync(scriptsDest)) {
+          mkdirSync(scriptsDest, { recursive: true });
+        }
+        copyRecursive(scriptsSrc, scriptsDest);
+      }
+    }
+
     deployed++;
     log(`Deployed: ${dir} → ${destDir}`);
   }
 
-  log(`Deployed ${deployed} skills to ${CLAUDE_SKILLS}`);
+  log(`Deployed ${deployed} ${DEFAULT_LOCALE} skills to ${CLAUDE_SKILLS}`);
   return true;
 }
 
@@ -91,14 +113,14 @@ function showBanner() {
   console.log('');
   console.log(`  \x1b[1m\x1b[33m⚡ isshine\x1b[0m \x1b[2mv${pkg.version}\x1b[0m  —  flash of requirement`);
   console.log('');
-  console.log('  Generate AI-friendly, human-readable GitHub Issues');
-  console.log('  from conversations. One conversation = one Issue.');
+  console.log('  将对话转化为 AI 友好、人类可读的 GitHub Issue');
+  console.log('  默认安装中文 skill；一个对话 = 一个 Issue。');
   console.log('');
-  console.log('  \x1b[1mQuick start:\x1b[0m');
-  console.log('    \x1b[36m/isshine-init\x1b[0m     Set up project spec/ and strategies');
-  console.log('    \x1b[36m/isshine\x1b[0m           Start a new requirement');
-  console.log('    \x1b[36m/isshine-quick\x1b[0m     Quick mode (skip deep design)');
-  console.log('    \x1b[36m/isshine-pr\x1b[0m        Generate PR comment from artifacts');
+  console.log('  \x1b[1m快速开始:\x1b[0m');
+  console.log('    \x1b[36m/isshine-init\x1b[0m     设置项目 spec/ 和处理策略');
+  console.log('    \x1b[36m/isshine\x1b[0m           开始一个新需求');
+  console.log('    \x1b[36m/isshine-quick\x1b[0m     快速模式（跳过深度设计）');
+  console.log('    \x1b[36m/isshine-pr\x1b[0m        基于产物生成 PR comment');
   console.log('');
 }
 
@@ -106,7 +128,7 @@ function showBanner() {
 try {
   showBanner();
   deploySkills();
-  log('Done! Ready to use /isshine in Claude Code.');
+  log('完成！现在可以在 Claude Code 中使用 /isshine。');
 } catch (err) {
   error(`Postinstall failed: ${err.message}`);
   // Don't fail the install — the package is still usable
