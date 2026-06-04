@@ -14,8 +14,9 @@ import { platform, homedir } from 'node:os';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 const ASSETS = join(ROOT, 'assets');
-const DEFAULT_LOCALE = 'zh';
-const SKILLS_SRC = join(ASSETS, DEFAULT_LOCALE === 'zh' ? 'skills-zh' : 'skills');
+const manifest = JSON.parse(readFileSync(join(ASSETS, 'manifest.json'), 'utf-8'));
+const DEFAULT_LOCALE = manifest.defaultLocale || 'en';
+const SKILLS_SRC = join(ASSETS, DEFAULT_LOCALE === 'en' ? 'skills' : `skills-${DEFAULT_LOCALE}`);
 const FALLBACK_SKILLS_SRC = join(ASSETS, 'skills');
 
 // Determine Claude Code skills directory
@@ -68,9 +69,11 @@ function deploySkills() {
     copyRecursive(srcDir, destDir);
 
     if (dir === 'isshine') {
-      const scriptsSrc = join(FALLBACK_SKILLS_SRC, 'isshine', 'scripts');
+      const preferredScriptsSrc = join(skillsSource, 'isshine', 'scripts');
+      const fallbackScriptsSrc = join(FALLBACK_SKILLS_SRC, 'isshine', 'scripts');
+      const scriptsSrc = existsSync(preferredScriptsSrc) ? preferredScriptsSrc : fallbackScriptsSrc;
       const scriptsDest = join(destDir, 'scripts');
-      if (existsSync(scriptsSrc)) {
+      if (scriptsSrc !== join(srcDir, 'scripts') && existsSync(scriptsSrc)) {
         if (!existsSync(scriptsDest)) {
           mkdirSync(scriptsDest, { recursive: true });
         }
